@@ -1,0 +1,875 @@
+---
+title: 'Assessment 4: Reproducible Data Analysis Project'
+author: "Johan Pal U3237699"
+date: "2023-05-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1-Introduction 
+
+#a)Relevant background information of basketball, including key metrics, position requirements etc
+
+  This whole assignment is based on the fact to evaluate and get five basketball players with a budget of $118 million. To do so, several key factors need to be considered to evaluate basketball players and teams which are: points per game (PPG), rebounds per game (RPG), assists per game (APG), steals per game (SPG), blocks per game (BPG), and field goal percentage (FG%). In the basketball world, the above-mentioned metrices are used to assess individual player performance & team performance. Moreover, there is also other metrices that are available and commonly used to give comprehensive picture of a player’s value and their impact on the team such as player efficiency rating (PER), true shooting percentage (TS%), and win shares (WS).
+
+  Most people, even if they do not watch basketball, know it is a game played with five players on each side of a team, where every player has a different position and role. The different five positions are: 
+
+1)Point Guard (PG): known to be the team’s primary ball handler and playmaker, meaning they have a vital role to set up offensive plays and passing the ball to other players. Usually, not deemed necessary point guards are smaller in height and quicker than other players where they are effective on passing the ball, handling the ball, and shooting from a mid-range or after the arc.
+
+2)Shooting Guard (SG):  as the name itself implies, known to be the team’s best perimeter shooter and scorer, meaning they have a vital role and responsible in taking high percentage shots which also means they would stretch the defense of the opposite team with their shooting range. Compared to point guards, shooting guards are larger in size and are more athletic where they a focus shooting, cutting, and scoring from mid-range and after the arc.  
+
+3)Small Forward (SF): In my opinion, small forwards are basically versatile players or in other words an all-rounder as they can adapt playing both inside and outside as they have the ability and focus on scoring, rebounding, and defending. Compared to shooting guards, they are usually larger in size and more athletic.
+
+4)Power Forward (PF): known to be playing close to the basket and have a focus on scoring, rebounding, and defending within the borders of the arc. Compared with small forwards, are larger in size and more physical.
+
+5)Center (C): known to be the tallest player in basketball as they are the primary defenders and rebounders near the basket. They are as I said the largest in size and most physical players on the team as they focus on scoring, rebounding, and defending within and inside the borders of the arc. 
+
+  Finally, it is important to know that besides the key metrices, there are other key factors that drag and decrease the overall performance of a player as well as the team in basketball and that includes playing style, coaching strategy, team chemistry, and injury. It's important to take all these factors into account when analyzing basketball data and making decisions about player recruitment and team strategy.
+
+#b)Description of the scenario
+
+  In this scenario, I am a data analyst representing/working for NBA team Chicago Bulls which placed 27th out of 30 teams based on a win-loss record in the season 2018-19. We have a budget of $118 million for player contracts in the upcoming 2019-20 season where we ranked 26th out of 30 teams. My task as a data analyst is to use the budget in an effective manner which we can afford to identify the best five starting players for the team and that can be players that were already playing in Chicago Bulls team in 2018-19 season, of course proving that they are worth the investment. 
+
+  To tackle such a task, as a data analyst I must collect and analyze data on the performance as well as salaries of NBA players based on the previous season and use it to build a model that can help predict player performance. Based on the model we came up with, identify the top five players for each position our team can afford with the budget. 
+
+Overall, the vital goal is to improve team performance in the upcoming season having a budget constraint. 
+
+
+
+#c)Aim of the project
+
+  The aim of such a project is to have the chance of improving and potentially moving up in the league rankings board by relying on key metrices and overall performance of team players in the previous season. 
+
+#d)Justification and importance
+
+
+  The justification and importance of such a project lies in the fact that the NBA team Chicago Bulls that was once known to be historically successful in basketball, is currently struggling to maintain its position in the league. Identifying the best five starting players for the team within their budget constraints can help improve its performance and potentially move it up on the league rankings board.
+  
+  The project is vital because it establishes the value of data-driven decision making in the field of sports, which has become increasingly competitive and financially driven. Use of data analysis can facilitate teams identifying undervalued players, assess the performance of existing players, and make updated decisions about future player purchases.
+
+  Moreover, the project can have substantial financial consequences for the team. The NBA has a salary cap, which limits the amount of money a team can spend on player contracts. By identifying the best five starting players within a budget, the Chicago Bulls can improve the spending and potentially avoid costly mistakes in player purchases.
+
+  Overall, the project is justified and important because it can benefit Chicago Bulls enhance their performance, increase their competitiveness, and make informed decisions about player purchase within budget constraints.
+
+
+
+```{r}
+# 2-Reading and cleaning the raw data 
+
+#Loading and installing packages if necessary 
+if(!require(tidyverse)) install.packages('tidyverse') 
+if(!require(tidyr)) install.packages('tidyr') 
+if(!require(ggplot2)) install.packages('ggplot2') 
+if(!require(broom)) install.packages('broom') 
+
+# We start by loading and importing csv files into R 
+
+nba_playersalaries <- read.csv("2018-19_nba_player-salaries.csv")
+nba_playerstats <- read.csv("2018-19_nba_player-statistics.csv")
+nba_playerstats1 <- read.csv("2018-19_nba_team-statistics_1.csv")
+nba_playerstats2<- read.csv("2018-19_nba_team-statistics_2.csv")
+nba_teampayroll <- read.csv ("2019-20_nba_team-payroll.csv")
+
+#Use colSums function to search for missing values in each data frame 
+
+colSums(is.na(nba_playersalaries))
+colSums(is.na(nba_playerstats))
+colSums(is.na(nba_playerstats1))
+colSums(is.na(nba_playerstats2))
+colSums(is.na(nba_teampayroll))
+
+#Concluded that two datasets need cleaning by either replacing or removing missing values "NA"
+
+
+#After have done some research and viewing the datasets, I found out that columns "X", "X.1", and "X.2" in "nba_playerstats1" need to be removed as they are just empty columns 
+
+#Removing the last three columns using the square bracket notation 
+
+nba_playerstats1 <- nba_playerstats1 [,-(23:25)]
+
+#Checking again for clarification 
+
+colSums(is.na(nba_playerstats1))
+
+#Moreover, there around 5 metrices in "nba_playerstats" that have missing values. 
+
+#I began with an approach to check how many times a name of a basketball player has been repeated more than once within the column "player_name" since there is a chance for a player to change teams within a season. 
+
+freq_table <- table(nba_playerstats$player_name)
+
+freq_table[freq_table>1]
+
+#Concluded that some players have their name written more than once 
+#Decided on creating a new data frame and choosing the last row for player names that have been repeated because the metrices are accumulating when a player is changing from one team to another. 
+
+nba_playerstats_new <- nba_playerstats %>% 
+  group_by(player_name) %>% 
+  slice(which.max(G)) %>% 
+  ungroup()
+
+  
+#Check if there are missing values in the new created data frame  
+
+colSums(is.na(nba_playerstats_new))
+
+#Concluded that five metrices have NA values 
+
+#After careful visualization and scanning the new data frame,it was clear that NA values appeared when a formula was used meaning in case of "X3P." the formula is X3P/X3PA and when both X3P & X3PA are zero the final value of "X3P." is showing as "NA". Same applies for the rest of the metrices like "FG.", "X2P.","eFG.", and "FT.".  
+
+#Decided to replace NA values with zero. 
+
+nba_playerstats_new[is.na(nba_playerstats_new)] <- 0
+
+#Checking again if there are NA values 
+
+colSums(is.na(nba_playerstats_new)) 
+
+
+#Create new processed folder in directory to store the processed data 
+
+if(!dir.exists("processed")){
+  dir.create("processed")
+}
+
+
+#Create data frames to CSV files in the processed folder
+write.csv(nba_playerstats_new, file = "processed/nba_playerstats_new.csv", row.names = FALSE)
+write.csv(nba_playersalaries , file = "processed/nba_playersalaries .csv", row.names = FALSE)
+write.csv(nba_playerstats1, file = "processed/nba_playerstats1.csv", row.names = FALSE)
+write.csv(nba_playerstats2, file = "processed/nba_playerstats2.csv", row.names = FALSE)
+write.csv(nba_teampayroll, file = "processed/nba_teampayroll.csv", row.names = FALSE)
+
+
+
+#Since there are five different positions we have to choose from I decided to create five different data frames in order to get a better understanding of the players and their performance 
+
+
+pg_data <- subset(nba_playerstats_new, nba_playerstats_new$Pos == "PG")
+pf_data <- subset(nba_playerstats_new,nba_playerstats_new$Pos == "PF")
+sf_data <- subset(nba_playerstats_new,nba_playerstats_new$Pos == "SF")
+sg_data <- subset(nba_playerstats_new,nba_playerstats_new$Pos == "SG")
+c_data <- subset(nba_playerstats_new,nba_playerstats_new$Pos == "C")
+
+
+#Since we also have the option to choose players that are already in the Chicago Bulls team . I decided to create two different data frames one for salary and one for the stats and then merged them into one data frame. 
+
+nba_playersalaries_new <- merge(nba_playersalaries,nba_playerstats_new[,c("player_name","Tm")], by = "player_name",all.x = TRUE)
+
+nba_playersalaries_new <- subset(nba_playersalaries_new, !is.na(Tm))
+
+
+chicago_bulls_stats <- subset(nba_playerstats_new, Tm == "CHI")
+
+chicago_bulls_salaries <- subset(nba_playersalaries_new, Tm == "CHI")
+
+chicago_bulls_merged <- merge(chicago_bulls_stats, chicago_bulls_salaries, by = "player_name")
+
+
+
+
+```
+
+
+
+
+```{r}
+# 3-Exploratory Analysis 
+
+#EDA is a crucial and vital step in order to gain insight of different variables within a data frame 
+
+#Example 1- Checking relation between salary, age, and position
+
+nba_playerstats_new <- merge(nba_playerstats_new,nba_playersalaries, by = "player_name")
+
+
+nba_playerstats_new%>%  ggplot(aes(salary, Age , color = Pos)) + 
+  geom_point() +
+  scale_x_log10()
+
+#This graph clearly shows that there is no pattern of playing position that influences salary. One can also assume that as long as a player is skilled they will have definetly have a high salary no matter their age or position. 
+
+
+#Example 2- Salary of NBA players distribution 
+
+
+hist(nba_playersalaries$salary)
+
+#The skewness of the histogram of salaries proves to us and indicates that few players have high salaries and this indicates outliers which at a later stage can be evaluated in a linear model 
+
+#Example 3- Checking structure of "nba_teampayroll" data set 
+
+str(nba_teampayroll)
+
+#Remove $ sign in the teampayroll dataset for later use to build a histogram 
+nba_teampayroll$salary <- gsub("\\$|,", "", nba_teampayroll$salary) 
+
+#Converting from character to numeric to use in order to build a  histogram 
+
+nba_teampayroll$salary  <- as.numeric(nba_teampayroll$salary )
+
+hist(nba_teampayroll$salary)
+
+#Concluded that it is approximately normally distributed meaning the budget of different NBA team is close to one another. 
+
+
+# Example 4- Viewing the count of players for all five positions 
+
+# Count players by position
+pos_count <- table(nba_playerstats_new$Pos)
+
+# Convert to data frame
+pos_count_df <- data.frame(Position = names(pos_count), Count = as.vector(pos_count))
+
+# Create bar plot
+ggplot(pos_count_df, aes(x = Position, y = Count)) + 
+  geom_bar(stat = "identity", fill = "steelblue") +
+  ggtitle("Count of Players by Position")
+
+# The graph shows that the count for shooting guards is the highest. 
+
+
+```
+
+#4- Data Modelling & results 
+
+Data modelling to select players can be a vital step because it can help detect patterns and relations between different player attributes and their performance on the court. By analyzing data, teams can identify key factors that provide to success, such as shooting accuracy, rebounding ability, and defensive skills.
+
+By use of the information, we can develop different models to predict how players will most likely perform in the future all based on their past performance, not to forget other factors that can also affect like injuries or if a player is going to start in a game or not.
+
+The model in this way would help teams make knowledgeable decisions about which players to sign or trade for, as well as help trainers and directors develop strategies to adjust player performance on the court.
+Overall, data modelling and results can give valuable insights into player performance and benefit teams make more informed decisions, ultimately leading to better team performance and greater success on the court.
+
+
+
+```{r}
+# 4-Data modelling and results 
+
+# a) data modelling (e.g. creating a linear regression)
+
+#First Model
+
+#Point Guards And Shooting Guards 
+
+
+#There are a few possible options for us to choose for x and y in the Exploratory data analysis in order to decide on a point guards and shooting guards. I am building a model on both together because they have similar factor to predict player performances for these position. My approach to building the model was that both PG and SG are two main dragging factors for teams to increase when it comes to scoring. Therefore, metrices like 3 points is considered to be on top of the list as it is the most important factor to increase the scoreboard quickly.  
+
+#Begin by merging the two data frames pg_data and sg_data together
+
+pg_sg_merge <- subset(nba_playerstats_new,nba_playerstats_new$Pos %in% c("PG", "SG"))
+
+#Add subject ID column to be used later in modeling 
+
+pg_sg_merge$subject_id <- 1:nrow(pg_sg_merge)
+
+#Assists per game for (x) and Points per game for (y): This can help identify point guards and shooting guards who excel at setting up their teammates for scoring opportunities, while also being able to score themselves.
+
+#Steals per game for (x) and Turnovers per game for (y): This can help identify point guards and shooting guards who are skilled at creating turnovers on defense, but may also be prone to making mistakes with the ball on offense.
+
+#Three-point percentage for (x) and Free-throw percentage for (y): This can help identify point guards and shooting guards who are strong shooters from beyond the arc and at the free-throw line, which are both important skills for scoring and closing out games.
+
+#I would personally be conducting the last option because I have mentioned before three point is an important factor as well free throws as they are considered brownie points in the basketball world 
+
+#relationship between 3 point percentage and free throw percentage for point guard and shooting guard data 
+
+ggplot(data = pg_sg_merge, aes(x = X3P., y = FT.)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+#Create linear regression to model X3P. (3 point percentage) based on assists,turnovers, field goal percentage, points, minutes played, & steals. 
+
+model <- lm(X3P. ~ AST + TOV +
+            FG. + FT. + 
+            PTS + MP +
+            STL, data = pg_sg_merge)
+tidy(model, conf.int = TRUE)
+
+# Print model summary
+summary(model)
+
+
+#Independence 
+
+car::durbinWatsonTest(model)
+
+
+#Outliers
+
+std_res <- rstandard(model)
+
+points <- 1:length(std_res)
+
+ggplot(data = NULL, aes(x = points, y = std_res)) +
+  geom_point() +
+  ylim(c(-4,4)) +
+  geom_hline(yintercept = c(-3, 3), colour = "red", linetype = "dashed")
+
+
+# there could be some outliers here as some points are close to 3
+
+
+res_labels <- if_else(abs(std_res) >= 2.5, paste(points), "")
+
+ggplot(data = NULL, aes(x = points, y = std_res, label = res_labels)) +
+  geom_point() +
+  geom_text(nudge_x = 2) +
+  ylim(c(-4,4)) +
+  geom_hline(yintercept = c(-3, 3), colour = "red", linetype = "dashed")
+
+
+
+#Leverage points 
+
+#Determining any high leverage points that have the potential to influence the model
+
+
+hats <- hatvalues(model)
+
+ggplot(data = NULL, aes(x = points, y = hats)) +
+  geom_point()
+
+# There are no hatvalues greater than 1, however we might investigate the points above 0.2 as they seem to stick out above the rest
+
+hat_labels <- if_else(hats >= 0.15, paste(points), "")
+
+
+ggplot(data = NULL, aes(x = points, y = hats)) +
+  geom_point() +
+  geom_text(aes(label = hat_labels), nudge_y = 0.005)
+
+#Influential points
+
+#Determine if any of the points could be considered as points of high influence.
+
+
+cook <- cooks.distance(model)
+
+ggplot(data = NULL, aes(x = points, y = cook)) +
+  geom_point()
+
+# we might take a look at those points above 0.1 that are standing out above the rest
+
+cook_labels <- if_else(cook >= 0.075, paste(points), "")
+
+ggplot(data = NULL, aes(x = points, y = cook)) +
+  geom_point() +
+  geom_text(aes(label = cook_labels), nudge_x = 2)
+
+
+# create new data frame without the high influence points
+outliers <- c(14,60,123,189,201,213)
+
+filtered_pg_sg_merge <- pg_sg_merge %>% 
+  filter(!subject_id %in% outliers)
+
+model2 <- lm(X3P. ~ AST + TOV +
+            FG. + FT. + 
+            PTS + MP +
+            STL, data = pg_data)
+
+tidy(model2, conf.int = TRUE)
+
+summary(model2)
+
+
+#The adjusted R square has increased from 0.4078 to 0.4511 after dealing with outliers shows that the outliers were having a negative impact on the model and reducing the accuracy of the predictions. Therefore, the model is now more accurate.
+
+
+
+#Homoscedasticity
+#Check your model for any evidence of heteroscedasticity
+
+res <- residuals(model)
+fitted <- predict(model)
+
+
+ggplot(data = NULL, aes(x = fitted, y = res)) +
+  geom_point(colour = "dodgerblue") + 
+  geom_hline(yintercept = 0, colour = "red", linetype = "dashed")
+
+
+# there does not appear to be evidence of heteroscedasticity 
+
+#Normality
+
+#Check if the residuals are normally distributed 
+
+ggplot(data = NULL, aes(x = res)) +
+  geom_histogram(colour = "black", fill = "dodgerblue", binwidth = 0.1)
+
+
+# Histogram produced looks fairly normal. 
+
+
+ggplot(data = NULL, aes(sample = res)) +
+  stat_qq() + stat_qq_line()
+
+
+#Multicollinearity
+
+car::vif(model)
+
+#Some of the VIF values are quite high, which indicates that there may be a high degree of multicollinearity among the predictor variable which can cause issues in the model, such as unstable coefficients and reduced predictive power. 
+
+
+#Linearity
+
+
+car::avPlots(model)
+
+
+#Interpretation 
+
+#Main goal of the model is to establish an equation to estimate 3 point percentage based on model coefficients and given values of explanatory variables. 
+
+#Estimated X3P. = -6.079e-02 + AST *  -7.313e-05 + TOV * -3.841e-04 + FG. * 8.719e-01 + FT. * 4.063e-02 + PTS * 4.330e-05 + MP *  1.767e-05  + STL * -1.948e-04
+
+
+#Second Model (Repeat previous steps but for SF and PF) 
+
+#Small forwards and Power forwards 
+
+
+#There are a few possible options for us to choose for x and y in the Exploratory data analysis in order to decide on a small and power forwards. I am building a model on both together because they have similar factor to predict their performance.
+
+#Begin by merging the two data frames sf_data and pf_data together
+
+pf_sf_merge <- subset(nba_playerstats_new,nba_playerstats_new$Pos %in% c("PF", "SF"))
+
+
+#Add subject ID column to be used later in modeling 
+
+pf_sf_merge$subject_id <- 1:nrow(pf_sf_merge)
+
+#Rebounds per game (x) and Points per game (y): This can help identify power forwards and small forwards who are skilled at both scoring and rebounding, which are important skills for playing in the frontcourt.
+
+#Blocks per game (x) and Fouls per game (y): This can help identify power forwards and small forwards who are strong defenders and can protect the rim, while also avoiding fouls that could lead to easy points for the opposing team.
+
+#Field-goal percentage (x) and Free-throw percentage (y): This can help identify power forwards and small forwards who are efficient scorers and can convert their scoring opportunities, which is important for maintaining a high scoring output.
+
+#Again, the specific variables one chooses will depend on what they value most in a power forward or small forward  and what data we have available.
+
+#I would personally be conducting the last option.
+
+#relationship between Field-goal percentage and free throw percentage for power forward and small forward  data 
+
+ggplot(data = pf_sf_merge, aes(x = FG., y = FT.)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+#Create linear model 
+
+model3 <- lm(FG. ~ AST + TRB +
+            BLK + FT. + 
+            PTS + MP +
+            PF, data = pf_sf_merge)
+tidy(model3, conf.int = TRUE)
+
+# Print model summary
+summary(model3)
+
+
+#Independence 
+
+car::durbinWatsonTest(model3)
+
+
+#Outliers
+
+std_res <- rstandard(model3)
+
+points <- 1:length(std_res)
+
+ggplot(data = NULL, aes(x = points, y = std_res)) +
+  geom_point() +
+  ylim(c(-4,4)) +
+  geom_hline(yintercept = c(-3, 3), colour = "red", linetype = "dashed")
+
+
+res_labels <- if_else(abs(std_res) >= 2.5, paste(points), "")
+
+ggplot(data = NULL, aes(x = points, y = std_res, label = res_labels)) +
+  geom_point() +
+  geom_text(nudge_x = 2) +
+  ylim(c(-4,4)) +
+  geom_hline(yintercept = c(-3, 3), colour = "red", linetype = "dashed")
+
+
+
+#Leverage points 
+
+hats <- hatvalues(model3)
+
+ggplot(data = NULL, aes(x = points, y = hats)) +
+  geom_point()
+
+
+hat_labels <- if_else(hats >= 0.15, paste(points), "")
+
+
+ggplot(data = NULL, aes(x = points, y = hats)) +
+  geom_point() +
+  geom_text(aes(label = hat_labels), nudge_y = 0.005)
+
+#Influential points
+
+cook <- cooks.distance(model3)
+
+ggplot(data = NULL, aes(x = points, y = cook)) +
+  geom_point()
+
+cook_labels <- if_else(cook >= 0.075, paste(points), "")
+
+ggplot(data = NULL, aes(x = points, y = cook)) +
+  geom_point() +
+  geom_text(aes(label = cook_labels), nudge_x = 2)
+
+
+# create new data frame without the high influence points
+outliers <- c(45,56,68,138,141)
+
+filtered_pf_sf_merge <- pf_sf_merge %>% 
+  filter(!subject_id %in% outliers)
+
+model4 <- lm(FG. ~ AST + TRB +
+            BLK + FT. + 
+            PTS + MP +
+            PF, data = pf_sf_merge)
+
+tidy(model4, conf.int = TRUE)
+
+summary(model4)
+
+
+
+#Homoscedasticity
+
+
+res <- residuals(model3)
+fitted <- predict(model3)
+
+
+ggplot(data = NULL, aes(x = fitted, y = res)) +
+  geom_point(colour = "dodgerblue") + 
+  geom_hline(yintercept = 0, colour = "red", linetype = "dashed")
+
+
+# there does not appear to be evidence of heteroscedasticity 
+
+#Normality
+
+ggplot(data = NULL, aes(x = res)) +
+  geom_histogram(colour = "black", fill = "dodgerblue", binwidth = 0.1)
+
+
+ggplot(data = NULL, aes(sample = res)) +
+  stat_qq() + stat_qq_line()
+
+#Multicollinearity
+
+car::vif(model3)
+
+
+#Linearity
+
+
+car::avPlots(model3)
+
+
+#Interpretation 
+
+
+#Estimated FG. = 3.299e-01 + AST *   6.188e-05 + TRB*  1.208e-04 + BLK * 5.134e-04+ FT. * 1.215e-01  + PTS * 4.060e-05  + MP * -6.898e-05  + PF * 3.689e-04 
+
+
+
+
+
+#Third Model (Repeat previous steps but for Centers)
+
+#Centers
+
+
+#There are a few possible options for us to choose for x and y in the Exploratory data analysis in order to decide on a Center. 
+
+#Run center data 
+c_data
+
+
+#Add subject ID column to be used later in modeling 
+
+c_data$subject_id <- 1:nrow(c_data)
+
+#Blocks (x) and Defensive Rebounds (y): This can help identify centers who are strong defenders and rebounders, which are key skills for the position.
+
+#Field goal percentage (x) and Points per game (y): This can help identify centers who are efficient scorers and capable of consistently contributing to their team's offense.
+
+#the specific variables one chooses will depend on what one values most in a center and what data we have available.
+
+#I would personally be conducting the first option.
+
+#relationship between Blocks and Defensive Rebounds for center  data 
+
+ggplot(data = c_data, aes(x = BLK, y = DRB)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+#Create linear model 
+
+model5 <- lm(BLK ~ DRB + TRB + PF + 
+            AST + MP , data = c_data)
+tidy(model5, conf.int = TRUE)
+
+# Print model summary
+summary(model5)
+
+
+#Independence 
+
+car::durbinWatsonTest(model5)
+
+
+#Outliers
+
+std_res <- rstandard(model5)
+
+points <- 1:length(std_res)
+
+ggplot(data = NULL, aes(x = points, y = std_res)) +
+  geom_point() +
+  ylim(c(-4,4)) +
+  geom_hline(yintercept = c(-3, 3), colour = "red", linetype = "dashed")
+
+
+res_labels <- if_else(abs(std_res) >= 2.5, paste(points), "")
+
+ggplot(data = NULL, aes(x = points, y = std_res, label = res_labels)) +
+  geom_point() +
+  geom_text(nudge_x = 2) +
+  ylim(c(-4,4)) +
+  geom_hline(yintercept = c(-3, 3), colour = "red", linetype = "dashed")
+
+
+
+#Leverage points 
+
+hats <- hatvalues(model5)
+
+ggplot(data = NULL, aes(x = points, y = hats)) +
+  geom_point()
+
+
+hat_labels <- if_else(hats >= 0.15, paste(points), "")
+
+
+ggplot(data = NULL, aes(x = points, y = hats)) +
+  geom_point() +
+  geom_text(aes(label = hat_labels), nudge_y = 0.005)
+
+#Influential points
+
+cook <- cooks.distance(model5)
+
+ggplot(data = NULL, aes(x = points, y = cook)) +
+  geom_point()
+
+cook_labels <- if_else(cook >= 0.075, paste(points), "")
+
+ggplot(data = NULL, aes(x = points, y = cook)) +
+  geom_point() +
+  geom_text(aes(label = cook_labels), nudge_x = 2)
+
+
+# create new data frame without the high influence points
+outliers <- c(8,13,29,65,69,72,78,81)
+
+filtered_c_data<- c_data %>% 
+  filter(!subject_id %in% outliers)
+
+model6 <- lm(BLK ~ DRB + TRB + PF + 
+            AST + MP , data = c_data)
+
+
+tidy(model6, conf.int = TRUE)
+
+summary(model6)
+
+
+
+#Homoscedasticity
+
+
+res <- residuals(model5)
+fitted <- predict(model5)
+
+
+ggplot(data = NULL, aes(x = fitted, y = res)) +
+  geom_point(colour = "dodgerblue") + 
+  geom_hline(yintercept = 0, colour = "red", linetype = "dashed")
+
+
+# there does not appear to be evidence of heteroscedasticity 
+
+#Normality
+
+ggplot(data = NULL, aes(x = res)) +
+  geom_histogram(colour = "black", fill = "dodgerblue", binwidth = 0.1)
+
+
+ggplot(data = NULL, aes(sample = res)) +
+  stat_qq() + stat_qq_line()
+
+#Multicollinearity
+
+car::vif(model5)
+
+
+#Linearity
+
+
+car::avPlots(model5)
+
+
+#Interpretation 
+
+
+
+#Estimated BLK = -5.83424 + DRB  *   0.27956 + TRB*  -0.20755 + PF * 0.08689 + AST  * -0.24872  + MP * 0.06496
+
+
+
+
+
+
+
+
+
+```
+
+# 5-Player recommendations 
+
+```{r}
+
+#Adding salary column to all the five data frames created for positions for interpretation on whose the most expensive player 
+
+
+pos_list <- list(pg_data,sg_data,sf_data,pf_data,c_data)
+
+for (i in seq_along(pos_list)) {
+  pos_list[[i]] <- merge(pos_list[[i]], nba_playersalaries, by = "player_name")
+}
+
+PG_df_with_salary <- pos_list[[1]]
+SG_df_with_salary <- pos_list[[2]]
+SF_df_with_salary <- pos_list[[3]]
+PF_df_with_salary <- pos_list[[4]]
+C_df_with_salary <- pos_list[[5]]
+
+
+
+# I personally believe that there is no right or wrong answer for this part as it all depends on what a person thinks or what approach one takes. 
+
+#For me, if I was in the shoes of general manager, as I have mentioned in the introduction that point guards are the team's primary meaning they are ones that would strengthen the attack of the team leading to major wins for the team. 
+
+#I started by looking at highest paid player for the position of "point guard" because in the basketball world or any other sport highest paid players are considered to be star players. Therefore got Stephen Curry as the most paid player for that position because Stephen is known to be a valuable player based on the stats he has and what he can achieve for the team.
+
+#So ended up choosing the most expensive player particularly for the position of point guard as I personally believe there should at least be one star player in a team. As for the rest of the positions, since now the remaining budget was $118 million - 37,475,154= 80,542,846. So, roughly speaking $20 million per player for the rest of the four positions. 
+
+#So, afterwards started looking for players close to that budget and with the help of metrices of the players and the formulas evaluated from the model, started taking players one by one based on trial and error and looking if the player chosen has an estimated value greater than the actual value that would show that they have the potential to do good in the next season. 
+
+
+#These are the formulas evaluated with the help of the three models: 
+
+#Estimated X3P. = -6.079e-02 + AST *  -7.313e-05 + TOV * -3.841e-04 + FG. * 8.719e-01 + FT. * 4.063e-02 + PTS * 4.330e-05 + MP *  1.767e-05  + STL * -1.948e-04
+
+
+#Estimated BLK = -5.83424 + DRB  *   0.27956 + TRB*  -0.20755 + PF * 0.08689 + AST  * -0.24872  + MP * 0.06496
+
+#Estimated FG. = 3.299e-01 + AST *   6.188e-05 + TRB*  1.208e-04 + BLK * 5.134e-04+ FT. * 1.215e-01  + PTS * 4.060e-05  + MP * -6.898e-05  + PF * 3.689e-04 
+
+
+#Therefore, with explanation the following players were chosen:  
+
+#For shooting guard, Klay thompson with actual X3P.= 0.402
+#Proof by using Estimated X3P. formula:
+
+-6.079e-02 + 86 *  -7.313e-05 + 115 * -3.841e-04 + 0.467 * 8.719e-01 + 0.816 * 4.063e-02 + 1680 * 4.330e-05 + 2652 *  1.767e-05  + 84 * -1.948e-04 #Equal to 0.4323223 
+
+#0.4323223 is greater than actual X3P. which is equal to 0.402 
+
+#For Small Forward and Power forward Khris Middleton and Julius Randle respectively were chosen: 
+# Proof by using Estimated FG. formula: 
+#For Khris Middleton with actual FG. value equal to 0.441
+
+3.299e-01 + 331 *   6.188e-05 + 461*  1.208e-04 + 7 * 5.134e-04+ 0.837 * 1.215e-01  + 1407 * 4.060e-05  + 2393 * -6.898e-05  + 172 * 3.689e-04 #Equal to 0.4668662
+
+# 0.4668662 is greater than actual FG.= 0.441
+
+#For Julius Randlewith with actual FG. value equal to 0.524
+
+3.299e-01 + 229 *   6.188e-05 + 634*  1.208e-04 + 45 * 5.134e-04+ 0.731 * 1.215e-01  + 1565 * 4.060e-05  + 2232 * -6.898e-05  + 246 * 3.689e-04 #Equal to 0.5329023 
+
+# 0.5329023 is greater than actual FG.= 0.524. 
+
+#For Center Nikola Vucevic was chosen:
+#Proof using Estimated BLK formula:
+#Actual BLK is equal to 89 
+
+-5.83424 + 736  *   0.27956 + 960*  -0.20755 + 157 * 0.08689 + 307  * -0.24872  + 2510 * 0.06496
+
+#101.0082 is greater than actual BLK= 89 
+
+
+
+
+
+#Therefore, the chosen player are:
+
+#Stephen Curry with a salary 37457154 for point guard 
+#Klay thompson with a salary 18988725 for shooting guard 
+#Khris Middleton with a salary 1.3e+07 for shooting guard
+#Julius Randlewith with a salary 8641000 for power forward 
+#Nikola Vucevic with a salary 12750000 for Center  
+
+
+
+#Total salary for the five players is : 
+
+37457154+18988725+1.3e+07+8641000+12750000 #Equal to 90836879
+
+#The total is below the budget which is good because the remaining is used to pay for the staff etc... 
+
+
+
+```
+
+# 6-Summary 
+
+As a data analyst, we were asked to provide and come up with 5 best and main players for the NBA team Chicago bulls for the 5 different positions (PG,SG,PF,SF,and C)and that to with a budget of $118 million. We were given data sets and information on basketball players based on their stats of the previous season which is 2018-2019 and need to come up with a prediction with the help of the data provided for the upcoming season.
+
+For every data analyst, we begin by obtaining data and in our case was that of NBA players from the past season, then continue cleaning and replacing data from any missing values. Moreover, explore data and study any relation between the variables which proved that there was no relation or effect of age with salary and position. 
+
+We continued by creating linear regression models for the 5 positions where we obtained a formula to help us impute the players stats to the particular formula for that position.
+
+Concluded and finalised by choosing the following: 
+
+#Stephen Curry with a salary 37457154 for point guard 
+#Klay thompson with a salary 18988725 for shooting guard 
+#Khris Middleton with a salary 1.3e+07 for shooting guard
+#Julius Randlewith with a salary 8641000 for power forward 
+#Nikola Vucevic with a salary 12750000 for Center  
+
+#Total Salary of $ 90836879 
+
+# 7-Reference list 
+
+Irizarry RA. Data Analysis and Prediction Algorithms with R [Internet]. 1st ed. [place unknown]: Rafael A Irizarry; 2019 [cited 2023 May 7]. Available from: http://rafalab.dfci.harvard.edu/dsbook/index.html
+
+Wikipedia. Basketball positions [Internet]. Wikimedia Foundation; 2023 [cited 2023 May 7]. Available from: https://en.wikipedia.org/wiki/Basketball_positions
+
+Wikipedia. Effective field goal percentage [Internet]. Wikimedia Foundation; [date unknown] [cited 2023 May 7]. Available from: https://en.wikipedia.org/wiki/Effective_field_goal_percentage
+
+ 
+
